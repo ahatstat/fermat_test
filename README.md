@@ -1,2 +1,2 @@
 # fermat_test
-Bignum library tuned for fermat primality testing
+Header only bignum library tuned for fermat primality testing
