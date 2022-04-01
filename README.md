@@ -7,12 +7,20 @@ The application is designed to test for primality on inputs with no fewer than 1
 
 ## Usage
 Copy the fermat folder and its contents to your project.  
-#include `fermat_prime.hpp`
+#include `fermat/ump.hpp`
 ```
-ump::Ump<1024> n;
-n.random();
-n.make_odd();
-bool prime = n.is_prime();
+int count = 0;
+	const int bits = 1024;
+	ump::Ump<bits> n;
+	bool prime = false;
+	while (!prime)
+	{
+		n.random();
+		n.make_odd();
+		prime = n.is_prime();
+		count++;
+	}
+	std::cout << "found a " << bits << " bit prime after " << count << " guesses." << std::endl;
 ```
 ## Building the tests (cmake)
 The test application requires GMP or MPIR (Windows) and OpenSSL. 
