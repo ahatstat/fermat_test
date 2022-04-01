@@ -6,7 +6,7 @@
 #include <iostream>
 #include <omp.h>
 #include <openssl/bn.h>
-#include "fermat/fermat_prime.hpp"
+#include "fermat_prime.hpp"
 #include "ump_test.hpp"
 
 //test program to compare ump fermat test performance against boost, gmp, and openssl libraries.
@@ -161,6 +161,20 @@ bool fermat_performance_test()
 
 int main()
 {
+	int count = 0;
+	const int bits = 1024;
+	ump::Ump<bits> n;
+	bool prime = false;
+	while (!prime)
+	{
+		n.random();
+		n.make_odd();
+		prime = n.is_prime();
+		count++;
+	}
+	std::cout << "found a " << bits << " bit prime after " << count << " guesses." << std::endl;
+
+
 	ump::Ump_test test;
 	bool pass = true;
 	if (!test.conversion_test())

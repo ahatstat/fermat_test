@@ -38,7 +38,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 find_package(OpenMP)
 
 
-add_executable(FermatPrimeTest main.cpp fermat/fermat_prime.cpp fermat/fermat_utils.cpp ump_test.cpp)
+add_executable(FermatPrimeTest main.cpp fermat_prime.cpp ump_test.cpp)
 if(WIN32)
    #find_package(MPIR REQUIRED)
    target_link_libraries(FermatPrimeTest mpir)

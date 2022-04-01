@@ -9,8 +9,21 @@
 
 namespace ump {
 
-	uint32_t mod_inverse_32(uint32_t d);
-	uint64_t mod_inverse_64(uint64_t d);
+	//64 bit mod inverse.
+	static inline uint64_t mod_inverse_64(uint64_t d)
+	{
+		uint64_t xn, t;
+		//initialize the estimate so that it is correct to 4 bits
+		xn = d * d + d - 1;
+		//for 64 bits the solution should converge after 4 iterations max
+		for (auto i = 0; i < 4; i++)
+		{
+			t = d * xn;
+			xn = xn * (2 - t);
+		}
+		return xn;
+	}
+
 	template< class T > int count_leading_zeros(T x)
 	{
 #if __cplusplus >= 202002L || _HAS_CXX20

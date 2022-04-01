@@ -77,6 +77,7 @@ namespace ump {
 			std::string to_str() const;
 			void clear_extra_words();
 			void make_odd();
+			bool is_prime();
 
 		};
 

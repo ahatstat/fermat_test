@@ -355,6 +355,14 @@ namespace ump {
     }
 
     template<int BITS>
+    bool Ump<BITS>::is_prime()
+    {
+        if (m_limbs[0] % 2 == 0)
+            return false;
+        return powm_2(*this, 0);
+    }
+
+    template<int BITS>
     Ump<BITS> operator / (const Ump<BITS>& lhs, const Ump<BITS>& rhs)
     {
         Ump<BITS> q, r;
