@@ -20,7 +20,7 @@ while (!prime)
 	prime = n.is_prime();
 	count++;
 }
-std::cout << "found a " << bits << " bit prime after " << count << " guesses." << std::endl;
+std::cout << "found a " << bits << " bit probable prime after " << count << " guesses." << std::endl;
 ```
 ## Building the tests (cmake)
 The test application requires GMP or MPIR (Windows) and OpenSSL. 
