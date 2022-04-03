@@ -202,6 +202,16 @@ int main()
 		std::cout << "Multiply test ui failed." << std::endl;
 		pass = false;
 	}
+	if (!test.multiply_test())
+	{
+		std::cout << "Multiply test failed." << std::endl;
+		pass = false;
+	}
+	if (!test.multiply_full_test())
+	{
+		std::cout << "Multiply full test failed." << std::endl;
+		pass = false;
+	}
 	if (!test.mod_inv_test())
 	{
 		std::cout << "Mod inv test failed." << std::endl;

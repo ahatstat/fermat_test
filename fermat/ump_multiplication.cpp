@@ -110,8 +110,8 @@ namespace ump {
         return low_word;
 #else
         uint64_t low_word = a * b;
-        upper_product = mulhi64(a, b);
         uint64_t x = low_word + carry_in;
+        upper_product = mulhi64(a, b);
         upper_product += (x < low_word) ? 1 : 0;
         return x;
 
@@ -129,24 +129,51 @@ namespace ump {
 
 
     //low half of mutliplication
-    //HAC 14.12 modified for fixed width
-    //todo: update for 64 bits
     template<int BITS>
-    Ump<BITS> Ump<BITS>::multiply(const Ump& y) const
+    Ump<BITS> Ump<BITS>::multiply(const Ump<BITS>& y) const
     {
         Ump<BITS> result;
             
-        for (auto i = 0; i < LIMBS; i++) //y index
+        for (int i = 0; i <= Ump<BITS>::HIGH_WORD; i++)
         {
-            uint32_t c = 0;
-            for (auto j = 0; j < LIMBS - i; j++) //x index
+            limb_t c = 0;
+            unsigned char cc = 0;
+            for (int j = 0; j <= Ump<BITS>::HIGH_WORD - i; j++)
             {
-                uint64_t uv = result.m_limbs[i+j] + static_cast<uint64_t>(m_limbs[j]) * y.m_limbs[i] + c;
-                result.m_limbs[i + j] = uv;  //store the lower bits
-                c = uv >> 32;  //the upper bits is the carry
+                 uint64_t u = mul_carry(c, m_limbs[j], y.m_limbs[i], c);
+                 cc = add_carry(cc, result.m_limbs[i + j], u, &result.m_limbs[i + j]);
             }
         }
         return result;
+    }
+
+    //full width mutliplication.  return the lower half and a reference to the upper half.
+    template<int BITS>
+    Ump<BITS> Ump<BITS>::multiply(Ump& upper_result, const Ump& y) const
+    {
+        Ump<BITS> lower_result;
+        upper_result = 0;
+
+        for (int i = 0; i <= Ump<BITS>::HIGH_WORD; i++)
+        {
+            limb_t c = 0;
+            unsigned char cc = 0;
+            //lower half
+            for (int j = 0; j <= Ump<BITS>::HIGH_WORD - i; j++)
+            {
+                uint64_t u = mul_carry(c, m_limbs[j], y.m_limbs[i], c);
+                cc = add_carry(cc, lower_result.m_limbs[i + j], u, &lower_result.m_limbs[i + j]);
+            }
+            //upper half
+            for (int j = Ump<BITS>::HIGH_WORD - i + 1; j <= Ump<BITS>::HIGH_WORD; j++)
+            {
+                uint64_t u = mul_carry(c, m_limbs[j], y.m_limbs[i], c);
+                cc = add_carry(cc, upper_result.m_limbs[i + j - (Ump<BITS>::HIGH_WORD + 1)], u,
+                    &upper_result.m_limbs[i + j - (Ump<BITS>::HIGH_WORD + 1)]);
+            }
+            upper_result.m_limbs[i] = c + cc;
+        }
+        return lower_result;
     }
 
         

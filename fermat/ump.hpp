@@ -65,6 +65,7 @@ namespace ump {
 			Ump operator ~ () const;
 			Ump multiply(limb_t) const;
 			Ump multiply(const Ump&) const;
+			Ump multiply(Ump&, const Ump&) const;
 			void operator *= (limb_t);
 			void operator *= (const Ump&);
 			void assign(std::string);

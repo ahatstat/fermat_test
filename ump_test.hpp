@@ -23,14 +23,16 @@ namespace ump {
 		bool add_test_ui();
 		bool subtract_test();
 		bool multiply_test_ui();
+		bool multiply_test();
+		bool multiply_full_test();
 		bool mod_inv_test();
 		bool montgomery_square_test();
 		bool double_and_reduce_test();
 		void generate_test_vectors_a(int vector_size);
 		void generate_test_vectors_b(int vector_size);
 
-		std::vector<Ump<1024>> a, b, c;
-		std::vector<boost::multiprecision::uint1024_t> aa, bb, cc;
+		std::vector<Ump<1024>> a, b, c, d;
+		std::vector<boost::multiprecision::uint1024_t> aa, bb, cc, d1;
 
 	};
 

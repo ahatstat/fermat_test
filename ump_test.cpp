@@ -234,6 +234,106 @@ namespace ump {
         return pass;
     }
 
+    bool Ump_test::multiply_test()
+    {
+        static constexpr int sample_size = 100000;
+        bool pass = true;
+
+        generate_test_vectors_a(sample_size);
+        generate_test_vectors_b(sample_size);
+
+        c.resize(sample_size);
+        cc.resize(sample_size);
+        auto start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            c[i] = a[i] * b[i];
+        }
+        auto end = std::chrono::steady_clock::now();
+        auto ump_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            cc[i] = aa[i] * bb[i];
+        }
+        end = std::chrono::steady_clock::now();
+        auto boost_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(c[i]);
+            if (dd != cc[i])
+            {
+                std::cout << std::hex << "Multiply Test failed." << std::endl << a[i].to_str() << std::endl <<
+                    " * " << b[i].m_limbs[0] << std::endl << " = " << c[i].to_str() << std::endl <<
+                    "Expected " << cc[i] << std::endl;
+                pass = false;
+            }
+        }
+        std::cout << "Multiply performance Ump " << ump_elapsed.count() * 1.0e6 / sample_size << "[us] Boost " <<
+            boost_elapsed.count() * 1.0e6 / sample_size << "[us] " << (double)ump_elapsed.count() / boost_elapsed.count()
+            << std::endl;
+        return pass;
+    }
+
+    //n bits * n bits = 2n bits
+    bool Ump_test::multiply_full_test()
+    {
+        static constexpr int sample_size = 100000;
+        bool pass = true;
+
+        generate_test_vectors_a(sample_size);
+        generate_test_vectors_b(sample_size);
+
+        c.resize(sample_size);
+        cc.resize(sample_size);
+        d.resize(sample_size);
+        d1.resize(sample_size);
+
+        auto start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            c[i] = a[i].multiply(d[i], b[i]);
+        }
+        auto end = std::chrono::steady_clock::now();
+        auto ump_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            cc[i] = aa[i] * bb[i];
+            boost::multiprecision::mpz_int wide = static_cast<boost::multiprecision::mpz_int>(aa[i]) *
+                static_cast<boost::multiprecision::mpz_int>(bb[i]);
+            d1[i] = static_cast<boost::multiprecision::uint1024_t>(wide >> 1024);
+        }
+        end = std::chrono::steady_clock::now();
+        auto boost_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(c[i]);
+            if (dd != cc[i])
+            {
+                std::cout << std::hex << "Multiply Full Test failed for the low half." << std::endl << a[i].to_str() << std::endl <<
+                    " * " << b[i].m_limbs[0] << std::endl << " = " << c[i].to_str() << std::endl <<
+                    "Expected " << cc[i] << std::endl;
+                pass = false;
+            }
+        }
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(d[i]);
+            if (dd != d1[i])
+            {
+                std::cout << std::hex << "Multiply Full Test failed for the high half." << std::endl << a[i].to_str() << std::endl <<
+                    " * " << b[i].m_limbs[0] << std::endl << " = " << d[i].to_str() << std::endl <<
+                    "Expected " << d1[i] << std::endl;
+                pass = false;
+            }
+        }
+        std::cout << "Multiply Full performance Ump " << ump_elapsed.count() * 1.0e6 / sample_size << "[us] Boost " <<
+            boost_elapsed.count() * 1.0e6 / sample_size << "[us] " << (double)ump_elapsed.count() / boost_elapsed.count()
+            << std::endl;
+        return pass;
+    }
+
     bool Ump_test::mod_inv_test()
     {
         static constexpr int sample_size = 1000;
