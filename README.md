@@ -1,10 +1,12 @@
 # fermat_test
-Header only c++ bignum library tuned for fermat primality testing.  Easy to use, no dependencies, no boost, portable, no assembly.
+Header only c++ bignum library tuned for fermat primality testing.  Easy to use, fast, no dependencies, portable, no assembly.
 
 ## Usage
 Copy the fermat folder and its contents to your project.  
-`#include fermat/ump.hpp`
 ```
+#include fermat/ump.hpp
+...
+
 int count = 0;
 const int bits = 1024;
 ump::Ump<bits> n;
