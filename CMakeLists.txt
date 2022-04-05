@@ -8,7 +8,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_TESTS "Test against Boost, GMP, and OpenSSL." ON)
-include_directories(${CMAKE_SOURCE_DIR}/fermat)
+add_library(fermat_test INTERFACE)
+target_include_directories(fermat_test INTERFACE fermat)
 
 if(BUILD_TESTS)
     if(MSVC)
@@ -43,12 +44,13 @@ if(BUILD_TESTS)
 
 
     add_executable(FermatPrimeTest main.cpp fermat_prime.cpp ump_test.cpp)
+    target_link_libraries(FermatPrimeTest fermat_test)
+
     if(WIN32)
        target_link_libraries(FermatPrimeTest mpir)
     else()
        find_library(gmp gmp)
        target_link_libraries(FermatPrimeTest gmp)
-
     endif()
     if(OpenMP_CXX_FOUND)
         target_link_libraries(FermatPrimeTest OpenMP::OpenMP_CXX)
