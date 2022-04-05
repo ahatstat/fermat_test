@@ -191,6 +191,7 @@ namespace ump {
         return pass;
     }
 
+    //bignum multiplied by a single word
     bool Ump_test::multiply_test_ui()
     {
         static constexpr int sample_size = 100000;
@@ -528,8 +529,6 @@ namespace ump {
             //b[i] is the modulus
             //make it odd
             b[i].m_limbs[0] |= 1;
-            //make sure the most signifcant word is non-zero
-            b[i].m_limbs[b[i].HIGH_WORD] |= 1;
             uint64_t m_primed = -mod_inverse_64(b[i].m_limbs[0]);
             Ump<1024> rmodm = b[i].R_mod_m();  //this is the equivalent of 1 in the montgomery domain mod m
             Ump<1024> temp = rmodm;
@@ -553,17 +552,12 @@ namespace ump {
         cc.resize(sample_size);
         for (auto i = 0; i < sample_size; i++)
         {
-            //b[i] is the modulus
-            //make it odd
-            b[i].m_limbs[0] |= 1;
-            //make sure the most signifcant word is non-zero
-            b[i].m_limbs[Ump<1024>::HIGH_WORD] |= (static_cast<limb_t>(1) << (BITS_PER_WORD - 15));
-            //clear a extra words
-            for (int j = Ump<1024>::HIGH_WORD + 1; j < Ump<1024>::LIMBS; j++)
-            {
-                a[i].m_limbs[j] = 0;
-            }
-            bb[i] = ump_to_boost_uint1024_t(b[i]);
+            //b[i] is the modulus.  ensure it is non-zero
+            if (bb[i] == 0) bb[i] = 1;
+            //start with a[i] already reduced (less than the modulus)
+            aa[i] = aa[i] % bb[i];
+            a[i] = boost_uint1024_t_to_ump(aa[i]);
+            b[i] = boost_uint1024_t_to_ump(bb[i]);
             c[i] = double_and_reduce(a[i], b[i], 1);
             boost::multiprecision::mpz_int x = (static_cast<boost::multiprecision::mpz_int>(aa[i]) * 2) % 
                 static_cast<boost::multiprecision::mpz_int>(bb[i]);
@@ -583,7 +577,6 @@ namespace ump {
                 pass = false;
             }
         }
-
         return pass;
     }
 

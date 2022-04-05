@@ -141,7 +141,7 @@ namespace ump {
            
             //t is the highest non-0 word of the divisor
             int t;
-            for (t = Ump<BITS>::HIGH_WORD; t >= 0; t--)
+            for (t = Ump<BITS>::LIMBS - 1; t >= 0; t--)
             {
                 if (divisor.m_limbs[t] > 0)
                     break;
@@ -190,11 +190,10 @@ namespace ump {
                     //perform double precision division using the upper words
                     uint64_t k;
                     quotient.m_limbs[j] = div128by64(k, xi, x.m_limbs[i - 1], y.m_limbs[t]);
-
                 }
                 //3.2
                 //determine if the estimate for qy is greater than x.  this requires a triple precision comparison.
-                Ump<3 * BITS_PER_WORD> y_3, qy_estimate, x_comp;
+                Ump<2 * BITS_PER_WORD> y_3, qy_estimate, x_comp;
                 y_3.m_limbs[1] = y.m_limbs[t];
                 y_3.m_limbs[0] = t > 0 ? y.m_limbs[t - 1] : 0;
                 qy_estimate = y_3 * quotient.m_limbs[j];
@@ -211,17 +210,14 @@ namespace ump {
                 //3.3 subtract q*y from x, where q is the current single precision quotient word we are working on and y is the full precision y. 
                 limb_t multiplication_carry = 0;  //carry for the multiply
                 unsigned char borrow = 0; //borrow for the subtraction
-                //multiply and subtract in one loop to minimize need for intermediate storage
-                //3.3
+                //3.3 multiply and subtract in one loop to minimize need for intermediate storage
                 for (auto k = 0; k <= t; k++)
                 {
                     limb_t qy = mul_carry(multiplication_carry, quotient.m_limbs[j], y.m_limbs[k], multiplication_carry);
                     borrow = sub_borrow(borrow, x.m_limbs[j + k], qy, &x.m_limbs[j + k]);
                 }
-
                 //handle carries to the final word
                 borrow = sub_borrow(borrow, x.m_limbs[j + t + 1], multiplication_carry, &x.m_limbs[j + t + 1]);
-                
                 //3.4 check if the previous subtraction of qy overflowed.  if so add back one y
                 if (borrow)
                 {
@@ -232,7 +228,6 @@ namespace ump {
                     {
                         int x_index = j + k;
                         addition_carry = add_carry(addition_carry, x.m_limbs[x_index], y.m_limbs[k], &x.m_limbs[x_index]);
-                        
                     }
                     //handle carries to the final word
                     int x_index = j + t + 1;
@@ -240,44 +235,26 @@ namespace ump {
 
                     //decrement the quotient word
                     quotient.m_limbs[j]--;
-
                 }
             }
             remainder = x >> normalize_shift;  //denormalize the remainder
-            
             return;
         }
 
         //Calculate R mod m where m is the modulus (this), R is 2^BITS 
-        //The upper word (but not the extra word) of m must be non-zero.  the object is m. 
-        //m must be less than, but relatively close to 2^BITS for this to work efficiently.
-        //We find the remainder by repeatedly shifting and subtracting.
         template<int BITS>
         Ump<BITS> Ump<BITS>::R_mod_m() const
         {
-            Ump<BITS> r;
-            //set r to 2^bits
-            const int extra_word = HIGH_WORD + 1;
-            r.m_limbs[extra_word] = 1;
-            if (m_limbs[extra_word] != 0 || m_limbs[HIGH_WORD] == 0)
-                //error condition
+            if (*this == 1)
                 return 0;
-            
-            //leading zeros of the modulus
-            int leading_zeros = count_leading_zeros(m_limbs[HIGH_WORD]);
-            //shift the modulus so the msb is set.  multiplying the divisor by an integer does not change the result mod m
-            Ump<BITS> m_primed = *this << leading_zeros;
-            
-            while (r >= *this) //continue until the remainder is between 0 and m
-            {
-                while (r >= m_primed)
-                {
-                    r -= m_primed;
-                }
-                m_primed >>= 1;
-            }
-
-            return r;
+            Ump<BITS> r, q, m, rem;
+            //set r to 2^bits - 1 to avoid overflow.
+            r -= 1;
+            r.clear_extra_words();
+            m = *this;
+            r.divide(m, q, rem);
+            //apply correction
+            return rem + 1;
         }
 
 }

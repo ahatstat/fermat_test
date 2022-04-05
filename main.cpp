@@ -162,7 +162,7 @@ bool fermat_performance_test()
 int main()
 {
 	int count = 0;
-	const int bits = 1024;
+	const int bits = 64 * 9;
 	ump::Ump<bits> n;
 	bool prime = false;
 	while (!prime)
@@ -175,11 +175,16 @@ int main()
 	std::cout << "found a " << bits << " bit prime after " << count << " guesses." << std::endl;
 	
 
-	/*n = 9;
+	n = 7;
 	prime = n.is_prime();
-	std::string notstring = "probably ";
-	if (!prime) notstring = "not ";
-	std::cout << n.to_str() << " is " << notstring << "prime." << std::endl;*/
+	std::cout << n.to_str() << " is " << (prime?"probably ":"not ") << "prime." << std::endl;
+	n = 1;
+	n = (n << 521) - 1;
+	prime = n.is_prime();
+	std::cout << n.to_str() << " is " << (prime ? "probably " : "not ") << "prime." << std::endl;
+	n = 1147;
+	prime = n.is_prime();
+	std::cout << n.to_str() << " is " << (prime ? "probably " : "not ") << "prime." << std::endl;
 
 	ump::Ump_test test;
 	bool pass = true;
