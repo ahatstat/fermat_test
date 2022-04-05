@@ -1,13 +1,9 @@
 # fermat_test
-Header only c++ bignum library tuned for fermat primality testing.  No dependencies, portable, no assembly.
-
-## Application
-Useful for verifying probable primality with a cpu following a sieve/search of a pseudo random region with a gpu. 
-The application is designed to test for primality on inputs with no fewer than 16 leading zero bits.  Inputs with large number of leading zero bits will run very slowly. 
+Header only c++ bignum library tuned for fermat primality testing.  Easy to use, no dependencies, no boost, portable, no assembly.
 
 ## Usage
 Copy the fermat folder and its contents to your project.  
-#include `fermat/ump.hpp`
+`#include fermat/ump.hpp`
 ```
 int count = 0;
 const int bits = 1024;
@@ -23,7 +19,7 @@ while (!prime)
 std::cout << "found a " << bits << " bit probable prime after " << count << " guesses." << std::endl;
 ```
 ## Building the tests (cmake)
-The test application requires GMP or MPIR (Windows) and OpenSSL. 
+The test application compares results against Boost, GMP or MPIR (Windows) and OpenSSL.  These libraries are required to build and run the test application.  Using the library does not require any libraries.   
 
 
 
