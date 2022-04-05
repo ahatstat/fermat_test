@@ -1,5 +1,5 @@
 # fermat_test
-Header only c++ bignum library tuned for fermat primality testing.  Easy to use, fast, no dependencies, portable, no assembly.
+Header only c++ multiple precision bignum library tuned for fermat primality testing.  Easy to use, fast, no dependencies, portable, no assembly.
 
 ## Usage
 Copy the fermat folder and its contents to your project.  
