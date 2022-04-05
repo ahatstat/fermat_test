@@ -8,7 +8,6 @@
 #include <sstream>
 #include <algorithm>
 #include <string>
-#include "ump.hpp"
 
 namespace ump {
 
@@ -519,7 +518,5 @@ namespace ump {
         }
 
     }
-
-
 
 }
