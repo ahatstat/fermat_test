@@ -81,8 +81,12 @@ namespace ump {
 			bool is_prime();
 
 		};
-		//template<> void Ump<128>::divide(const Ump& divisor, Ump& quotient, Ump& remainder) const;
-		
+		using uint128_t = Ump<128>;
+		using uint256_t = Ump<256>;
+		using uint512_t = Ump<512>;
+		using uint1024_t = Ump<1024>;
+		using uint2048_t = Ump<2048>;
+
 		template<int BITS>   Ump<BITS> operator + (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
 		template<int BITS>   Ump<BITS> operator + (const Ump<BITS>& lhs, int rhs);
 		template<int BITS>   Ump<BITS> operator + (const Ump<BITS>& lhs, uint32_t rhs);

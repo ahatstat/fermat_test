@@ -174,7 +174,6 @@ int main()
 	}
 	std::cout << "found a " << bits << " bit prime after " << count << " guesses." << std::endl;
 	
-
 	n = 7;
 	prime = n.is_prime();
 	std::cout << n.to_str() << " is " << (prime?"probably ":"not ") << "prime." << std::endl;
