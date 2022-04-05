@@ -21,7 +21,7 @@ while (!prime)
 std::cout << "found a " << bits << " bit probable prime after " << count << " guesses." << std::endl;
 ```
 ## Building the tests (cmake)
-The test application compares results against Boost, GMP or MPIR (Windows) and OpenSSL.  These libraries are required to build and run the test application.  Using the library does not require any libraries.   
+The test application compares results against Boost, GMP or MPIR (Windows) and OpenSSL.  These libraries are required to build and run the test application.  Using the Ump bignum header only library does not require any other libraries.   
 
 
 
