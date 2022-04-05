@@ -334,6 +334,159 @@ namespace ump {
         return pass;
     }
 
+    //128 bit by 128 bit division
+    bool Ump_test::divide_128_test()
+    {
+        static constexpr int sample_size = 100000;
+        bool pass = true;
+
+        generate_test_vectors_a(sample_size);
+        generate_test_vectors_b(sample_size);
+
+        c.resize(sample_size);
+        cc.resize(sample_size);
+        d.resize(sample_size);
+        d1.resize(sample_size);
+
+        auto start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            a[i] = (a[i] << (1024 - 128)) >> (1024 - 128);
+            b[i] = (b[i] << (1024 - 128)) >> (1024 - 128);
+            Ump<128> a128, b128, q128, r128;
+            a128.m_limbs[0] = a[i].m_limbs[0];
+            a128.m_limbs[1] = a[i].m_limbs[1];
+            b128.m_limbs[0] = b[i].m_limbs[0];
+            b128.m_limbs[1] = b[i].m_limbs[1];
+            if (b128 != 0)
+                a128.divide(b128, q128, r128);
+            c[i] = 0;
+            c[i].m_limbs[0] = q128.m_limbs[0];
+            c[i].m_limbs[1] = q128.m_limbs[1];
+            d[i] = 0;
+            d[i].m_limbs[0] = r128.m_limbs[0];
+            d[i].m_limbs[1] = r128.m_limbs[1];
+
+        }
+        auto end = std::chrono::steady_clock::now();
+        auto ump_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint128_t aa128 = static_cast<boost::multiprecision::uint128_t>(aa[i]);
+            boost::multiprecision::uint128_t bb128 = static_cast<boost::multiprecision::uint128_t>(bb[i]);
+            boost::multiprecision::uint128_t q128, r128;
+            if (bb128 != 0)
+            {
+                q128 = aa128 / bb128;
+                r128 = aa128 % bb128;
+            }
+            cc[i] = static_cast<boost::multiprecision::uint1024_t>(q128);
+            d1[i] = static_cast<boost::multiprecision::uint1024_t>(r128);
+        }
+        end = std::chrono::steady_clock::now();
+        auto boost_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(c[i]);
+            if (dd != cc[i])
+            {
+                std::cout << std::hex << "Divide 128 Test failed for the quotient." << std::endl << a[i].to_str() << std::endl <<
+                    " / " << b[i].to_str() << std::endl << " = " << c[i].to_str() << std::endl <<
+                    "Expected " << cc[i] << std::endl;
+                pass = false;
+            }
+        }
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(d[i]);
+            if (dd != d1[i])
+            {
+                std::cout << std::hex << "Divide 128 Test failed for remainder." << std::endl << a[i].to_str() << std::endl <<
+                    " % " << b[i].to_str() << std::endl << " = " << d[i].to_str() << std::endl <<
+                    "Expected " << d1[i] << std::endl;
+                pass = false;
+            }
+        }
+        std::cout << "Divide 128 performance Ump " << ump_elapsed.count() * 1.0e6 / sample_size << "[us] Boost " <<
+            boost_elapsed.count() * 1.0e6 / sample_size << "[us] " << (double)ump_elapsed.count() / boost_elapsed.count()
+            << std::endl;
+        return pass;
+    }
+
+    bool Ump_test::divide_test()
+    {
+        static constexpr int sample_size = 100000;
+        bool pass = true;
+
+        generate_test_vectors_a(sample_size);
+        generate_test_vectors_b(sample_size);
+
+        c.resize(sample_size);
+        cc.resize(sample_size);
+        d.resize(sample_size);
+        d1.resize(sample_size);
+
+        auto start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            //add some sizze by making the denominator smaller
+            if (i > 20)
+            {
+                b[i] = b[i] >> (7 * i % 1023);
+                bb[i] = bb[i] >> (7 * i % 1023);
+            }
+            if (i == 50)
+            {
+                a[i] = b[i];
+                aa[i] = bb[i];
+            }
+            
+            if (b[i] != 0)
+                a[i].divide(b[i], c[i], d[i]);
+        }
+        auto end = std::chrono::steady_clock::now();
+        auto ump_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+           
+            if (bb[i] != 0)
+            {
+                cc[i] = aa[i] / bb[i];
+                d1[i] = aa[i] % bb[i];
+            }
+        }
+        end = std::chrono::steady_clock::now();
+        auto boost_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(c[i]);
+            if (dd != cc[i])
+            {
+                std::cout << std::hex << "Divide Test failed the quotient." << std::endl << a[i].to_str() << std::endl <<
+                    " / " << b[i].to_str() << std::endl << " = " << c[i].to_str() << std::endl <<
+                    "Expected " << cc[i] << std::endl;
+                pass = false;
+            }
+        }
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(d[i]);
+            if (dd != d1[i])
+            {
+                std::cout << std::hex << "Divide Test failed for the remainder." << std::endl << a[i].to_str() << std::endl <<
+                    " % " << b[i].to_str() << std::endl << " = " << d[i].to_str() << std::endl <<
+                    "Expected " << d1[i] << std::endl;
+                pass = false;
+            }
+        }
+        std::cout << "Divide performance Ump " << ump_elapsed.count() * 1.0e6 / sample_size << "[us] Boost " <<
+            boost_elapsed.count() * 1.0e6 / sample_size << "[us] " << (double)ump_elapsed.count() / boost_elapsed.count()
+            << std::endl;
+        return pass;
+    }
+
     bool Ump_test::mod_inv_test()
     {
         static constexpr int sample_size = 1000;

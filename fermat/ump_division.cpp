@@ -1,395 +1,252 @@
 
+//divide 128 bit by a 64 bit number and return the 64 bit quotient and remainders 
+#ifdef __SIZEOF_INT128__     // GNU C
+static inline uint64_t div128by64(uint64_t& remainder, uint64_t high_dividend, uint64_t low_dividend, uint64_t divisor)
+{
+    uint64_t quotient = 0;
+    unsigned __int128 dividend = ((unsigned __int128)high_dividend << 64) | low_dividend;
+    quotient = dividend / divisor;
+    remainder = dividend % divisor;
+    return quotient;
+}
+
+#elif defined(_M_X64) || defined(_M_ARM64)     // MSVC
+#include <intrin.h>
+static inline uint64_t div128by64(uint64_t& remainder, uint64_t high_dividend, uint64_t low_dividend, uint64_t divisor)
+{
+    uint64_t quotient = 0;
+    quotient = _udiv128(high_dividend, low_dividend, divisor, &remainder);
+    return quotient;
+}
+
+#else  //fallback
+//TODO: implement fallback
+static inline uint64_t div128by64(uint64_t& remainder, uint64_t high_dividend, uint64_t low_dividend, uint64_t divisor)
+{
+    uint64_t quotient = 0;
+    remainder = 0;
+    return quotient;
+}
+#endif
+    
 namespace ump {
+    
+    //special case of 128 by 128 bit division which can be optimized if the compiler supports 128 bit integers
+    //quotient = *this/divisor.  remainder = *this - divisor * quotient.
+    template<>
+    inline void Ump<128>::divide(const Ump& divisor, Ump& quotient, Ump& remainder) const
+    {
+        remainder = 0;
+        quotient = 0;
+        if (divisor == 0)
+        {
+            std::cout << "Ump: Division by zero." << std::endl;
+            return;
+        }
+#ifdef __SIZEOF_INT128__     // GNU C
+        unsigned __int128 dividend = ((unsigned __int128)m_limbs[1] << 64) | m_limbs[0];
+        unsigned __int128 divis = ((unsigned __int128)divisor.m_limbs[1] << 64) | divisor.m_limbs[0];
+        unsigned __int128 q = dividend / divis;
+        unsigned __int128 rem = dividend % divis;
+        remainder.m_limbs[1] = rem >> 64;
+        remainder.m_limbs[0] = rem;
+        quotient.m_limbs[1] = q >> 64;
+        quotient.m_limbs[0] = q;
 
-        //this division function only works for 32 bits as written.  Todo: update for 64 bits
-        ////normalized multiprecision integer division.  Return both quotient and remainder.  Reference HAC chapter 14 algorithm 14.20.
-        //template<int BITS>
-        //void Ump<BITS>::divide(const Ump<BITS>& divisor, Ump<BITS>& quotient, Ump<BITS>& remainder) const
-        //{
-        //    const bool divide_debug = false;  //enable printfs
-        //    if (divisor == 0)
-        //    {
-        //        if (divide_debug) printf("division by zero detected.\n");
-        //        quotient = 0;
-        //        remainder = 0;
-        //        return;
-        //    }
-        //    if (divisor == 1)
-        //    {
-        //        quotient = *this;
-        //        remainder = 0;
-        //        return;
-        //    }
-        //    
-        //    int cmp = compare(divisor);
-        //    if (cmp == 0)
-        //    {
-        //        //the dividend and divisor are equal
-        //        quotient = 1;
-        //        remainder = 0;
-        //        return;
-        //    }
-        //    if (cmp == -1)
-        //    {
-        //        //the divisor is larger than the dividend
-        //        quotient = 0;
-        //        remainder = *this;
-        //        return;
-        //    }
+#else
+            
+        //hackers delight 9-5 modified for 128 bit
+        //u is dividend.  v is divisor. q quotient. r is remainder
+        if (*this < divisor)
+        {
+            remainder = *this;
+            return;
+        }
+        uint64_t k, n;
+        if (divisor.m_limbs[1] == 0) //the divisor (and thus the remainder) fits in one word.
+        {
+            if (m_limbs[1] < divisor.m_limbs[0])  // the quotient will fit in one word
+            {
+                quotient.m_limbs[0] = div128by64(remainder.m_limbs[0], m_limbs[1], m_limbs[0], divisor.m_limbs[0]);
+                return;
+            }
+            else  //the quotient will fit in two words. 
+            {
+                //break into halves
+                quotient.m_limbs[1] = div128by64(k, 0, m_limbs[1], divisor.m_limbs[0]);
+                quotient.m_limbs[0] = div128by64(remainder.m_limbs[0], k, m_limbs[0], divisor.m_limbs[0]);
+                return;
+            }
+        }
+        //the divisor is larger than one word.  The quotient will fit into one word and the remainder requires up to 2 words.
+        n = count_leading_zeros(divisor.m_limbs[1]);  // 0 <= n <= 63
+        //normalize the divisor so its MSB is one
+        Ump<128> v = divisor;
+        v = v << n;
+        Ump<128> u = *this;
+        //divide the numerator by 2 to ensure no overflow is possible
+        u = u >> 1;
+        quotient.m_limbs[0] = div128by64(k, u.m_limbs[1], u.m_limbs[0], v.m_limbs[1]);
+        //undo the normalization and divide by 2
+        quotient.m_limbs[0] = quotient.m_limbs[0] >> (63 - n) ; //the quotient is now correct or too large by one
+        quotient.m_limbs[0]--; //the quotient is now correct or too small by one
+        remainder = *this - quotient * divisor;
+        //apply correction
+        if (remainder >= divisor)
+        {
+            quotient.m_limbs[0]++;
+            remainder -= divisor;
+        }
+#endif
 
-        //    quotient = 0;
-        //    Ump<BITS> y = divisor;
-        //    Ump<BITS> x = *this;
-        //   
-        //   
+    }
+        //normalized multiprecision integer division.  Return both quotient and remainder.  Reference HAC chapter 14 algorithm 14.20.
+        template<int BITS>
+        void Ump<BITS>::divide(const Ump<BITS>& divisor, Ump<BITS>& quotient, Ump<BITS>& remainder) const
+        {
+            const bool divide_debug = false;  //enable printfs
+            if (divisor == 0)
+            {
+                if (divide_debug) printf("division by zero detected.\n");
+                quotient = 0;
+                remainder = 0;
+                return;
+            }
+            if (divisor == 1)
+            {
+                quotient = *this;
+                remainder = 0;
+                return;
+            }
+            
+            int cmp = compare(divisor);
+            if (cmp == 0)
+            {
+                //the dividend and divisor are equal
+                quotient = 1;
+                remainder = 0;
+                return;
+            }
+            if (cmp == -1)
+            {
+                //the divisor is larger than the dividend
+                quotient = 0;
+                remainder = *this;
+                return;
+            }
 
-        //    //t is the highest non-0 word of the divisor
-        //    int t;
-        //    for (t = divisor.LIMBS - 1; t >= 0; t--)
-        //    {
-        //        if (divisor.m_limbs[t] > 0)
-        //            break;
-        //    }
-        //    //normalize by shifting both dividend and divisor left until the MSB of the first divisor word is 1.
-        //    //this can overflow the dividend so we have to use the extra word.
-        //    int normalize_shift = __clz(divisor.m_limbs[t]);  //clz is an nvidia primitive that counts the leading zeros of a word
-        //    y <<= normalize_shift;
-        //    x <<= normalize_shift;
-        //    
-        //    //n is the highest non-0 word of the dividend
-        //    int n;
-        //    for (n = x.LIMBS - 1; n >= 0; n--)
-        //    {
-        //        if (x.m_limbs[n] > 0)
-        //            break;
-        //    }
+            quotient = 0;
+            Ump<BITS> y = divisor;
+            Ump<BITS> x = *this;
+           
+            //t is the highest non-0 word of the divisor
+            int t;
+            for (t = Ump<BITS>::HIGH_WORD; t >= 0; t--)
+            {
+                if (divisor.m_limbs[t] > 0)
+                    break;
+            }
+            //normalize by shifting both dividend and divisor left until the MSB of the first divisor word is 1.
+            //this can overflow the dividend so we have to use the extra word.
+            int normalize_shift = count_leading_zeros(divisor.m_limbs[t]); 
+            y <<= normalize_shift;
+            x <<= normalize_shift;
+            
+            //n is the highest non-0 word of the dividend
+            int n;
+            for (n = Ump<BITS>::LIMBS - 1; n >= 0; n--)
+            {
+                if (x.m_limbs[n] > 0)
+                    break;
+            }
 
-        //    if (divide_debug) printf("n %i t %i normalize_shift %i \n", n, t, normalize_shift);
-        //    //after normalization, this loop should execute max once
-        //    Ump<BITS>* temp = new Ump<BITS>;
-        //    *temp = y << (32 * (n - t));
-        //    while (x >= *temp)
-        //    {
-        //        quotient.m_limbs[n - t] += 1;
-        //        x -= *temp;
-        //    }
-        //    delete temp;
-        //    char s[LIMBS * 10];
-        //    if (divide_debug) {
-        //        printf("step 2\n");
-        //        x.to_cstr(s);
-        //        printf("x = %s\n", s);
-        //        y.to_cstr(s);
-        //        printf("y = %s\n", s);
-        //        quotient.to_cstr(s);
-        //        printf("q = %s\n", s);
-        //    }
+            if (divide_debug) printf("n %i t %i normalize_shift %i \n", n, t, normalize_shift);
+            //after normalization, this loop should execute max once
+            //step 2
+            Ump<BITS> temp;
+            temp = y << (BITS_PER_WORD * (n - t));
+            while (x >= temp)
+            {
+                quotient.m_limbs[n - t] += 1;
+                x -= temp;
+            }
 
-        //    //step 3
-        //    for (auto i = n; i > t; i--)  //t can be 0.  i is >= 1;
-        //    {
+            //step 3
+            for (auto i = n; i > t; i--)  //t can be 0.  i is >= 1;
+            {
+                int j = i - t - 1;  //the index of the current quotient word.  j >= 0;
+                limb_t xi = x.m_limbs[i];
+                if (divide_debug) printf("3.1 i %i j %i\n", i, j);
+                //3.1
+                if (xi == y.m_limbs[t])
+                {
+                    //with what test vector can i get inside this if?
+                    quotient.m_limbs[j] = -1;
+                    if (divide_debug) printf("3.1a\n");
+                }
+                else
+                {
+                    //3.1b
+                    //perform double precision division using the upper words
+                    uint64_t k;
+                    quotient.m_limbs[j] = div128by64(k, xi, x.m_limbs[i - 1], y.m_limbs[t]);
 
-        //        int j = i - t - 1;  //the index of the current quotient word.  j >= 0;
-        //        uint32_t xi = x.m_limbs[i];
-        //        if (divide_debug) printf("3.1 i %i j %i\n", i, j);
-        //        //3.1
-        //        if (xi == y.m_limbs[t])
-        //        {
-        //            quotient.m_limbs[j] = 0xFFFFFFFF;
-        //            if (divide_debug) printf("3.1a\n");
-        //        }
-        //        else
-        //        {
-        //            //perform double precision division using the upper words
-        //            quotient.m_limbs[j] = ((static_cast<uint64_t>(xi) << 32) + x.m_limbs[i - 1]) / y.m_limbs[t];
-        //            if (divide_debug) printf("3.1b q = %08x\n", quotient.m_limbs[j]);
+                }
+                //3.2
+                //determine if the estimate for qy is greater than x.  this requires a triple precision comparison.
+                Ump<3 * BITS_PER_WORD> y_3, qy_estimate, x_comp;
+                y_3.m_limbs[1] = y.m_limbs[t];
+                y_3.m_limbs[0] = t > 0 ? y.m_limbs[t - 1] : 0;
+                qy_estimate = y_3 * quotient.m_limbs[j];
+                x_comp.m_limbs[2] = xi;
+                x_comp.m_limbs[1] = x.m_limbs[i - 1];
+                x_comp.m_limbs[0] = i >= 2 ? x.m_limbs[i - 2] : 0;
+               //3.2 correction loop
+                while (qy_estimate > x_comp)
+                {
+                    //update the estimate
+                    quotient.m_limbs[j]--;
+                    qy_estimate -= y_3;
+                }
+                //3.3 subtract q*y from x, where q is the current single precision quotient word we are working on and y is the full precision y. 
+                limb_t multiplication_carry = 0;  //carry for the multiply
+                unsigned char borrow = 0; //borrow for the subtraction
+                //multiply and subtract in one loop to minimize need for intermediate storage
+                //3.3
+                for (auto k = 0; k <= t; k++)
+                {
+                    limb_t qy = mul_carry(multiplication_carry, quotient.m_limbs[j], y.m_limbs[k], multiplication_carry);
+                    borrow = sub_borrow(borrow, x.m_limbs[j + k], qy, &x.m_limbs[j + k]);
+                }
 
-        //        }
-        //        //3.2
-        //        //determine if the estimate for qy is greater than x.  this gives a triple precision result so we use two 64 bit words for qy
-        //        uint64_t y_upper = (static_cast<uint64_t>(y.m_limbs[t]) << 32) | static_cast<uint64_t>(t > 0 ? y.m_limbs[t - 1] : 0);
-        //        uint64_t qy_low = y_upper * quotient.m_limbs[j];
-        //        //this is triple precision so we only need the lower 32 bits from the upper 64 bit multiplication result
-        //        uint32_t qy_upper = __umul64hi(y_upper, quotient.m_limbs[j]);  //todo: deal with non-portable cuda intrinsic for high word multiply.  
-        //        if (divide_debug) printf("y_t = %08x y_upper = %016llx qy_low = %016llx qy_upper = %08x xi = %08x\n",
-        //            y.m_limbs[t], y_upper, qy_low, qy_upper, xi);
-        //        //while the estimate for qy is greater than x
-        //        while ((qy_upper > xi) || ((qy_upper == xi) && ((qy_low >> 32) > x.m_limbs[i - 1])) ||
-        //            ((qy_upper == xi) && ((qy_low >> 32) == x.m_limbs[i - 1]) && (static_cast<uint32_t>(qy_low) > i >= 2 ? x.m_limbs[i - 2] : 0)))
-        //        {
-        //            quotient.m_limbs[j]--;
-        //            //update the estimate
-        //            qy_low = y_upper * quotient.m_limbs[j];
-        //            qy_upper = __umul64hi(y_upper, quotient.m_limbs[j]);
-        //            if (divide_debug) printf("Inisde 3.2 correction loop.  qy_upper = %08x q_j = %08x\n", qy_upper, quotient.m_limbs[j]);
-        //        }
-        //        //3.3 subtract q*y from x, where q is the current single precision quotient word we are working on and y is the full precision y. 
+                //handle carries to the final word
+                borrow = sub_borrow(borrow, x.m_limbs[j + t + 1], multiplication_carry, &x.m_limbs[j + t + 1]);
+                
+                //3.4 check if the previous subtraction of qy overflowed.  if so add back one y
+                if (borrow)
+                {
+                    //with what test vector can i get inside this if?
+                    //printf("3.4 correction\n");
+                    unsigned char addition_carry = 0;
+                    for (auto k = 0; k <= t; k++)
+                    {
+                        int x_index = j + k;
+                        addition_carry = add_carry(addition_carry, x.m_limbs[x_index], y.m_limbs[k], &x.m_limbs[x_index]);
+                        
+                    }
+                    //handle carries to the final word
+                    int x_index = j + t + 1;
+                    x.m_limbs[x_index] += addition_carry;
 
-        //        uint32_t multiplication_carry = 0;  //carry for the multiply
-        //        uint32_t addition_carry = 1; //borrow for the subtraction
-        //        bool propagate = false;  //addition carry propagate
-        //        bool generate = false; //addition carry generate
-        //        //multiply and subtract in one loop to minimize need for intermediate storage
-        //        for (auto k = 0; k <= t; k++)
-        //        {
-        //            uint32_t yk = y.m_limbs[k];
-        //            uint64_t q = quotient.m_limbs[j];  //cast to 64 bits 
-        //            uint64_t qy64 = q * yk + multiplication_carry;  //perform multiplication of one word
-        //            uint32_t qy = static_cast<uint32_t>(qy64);  //keep the lower part of the multiplication
-        //            multiplication_carry = qy64 >> 32;  //carry the upper part of the multiplication result
-        //            //subtract qy from x by adding the two's complement
-        //            int x_index = j + k;
-        //            uint32_t xx = x.m_limbs[x_index];
-        //            uint32_t x_pre_carry = xx + ~qy;
-        //            propagate = x_pre_carry == 0xFFFFFFFF;
-        //            generate = x_pre_carry < xx;
-        //            x.m_limbs[x_index] = x_pre_carry + addition_carry;
-        //            addition_carry = generate || (propagate && addition_carry) ? 1 : 0;
-        //            if (divide_debug) printf("3.3 k %i j %i q_j %08x y_k %08x qy %08x mult_carry %08x xx %08x x_pre %08x add_carry %i\n",
-        //                k, j, quotient.m_limbs[j], yk, qy, multiplication_carry, xx, x_pre_carry, addition_carry);
-        //        }
+                    //decrement the quotient word
+                    quotient.m_limbs[j]--;
 
-        //        //handle carries to the final word
-        //        int x_index = j + t + 1;
-        //        uint32_t original_word = x.m_limbs[x_index];
-        //        uint32_t x_pre_carry = x.m_limbs[x_index] + ~multiplication_carry;
-        //        x.m_limbs[x_index] = x_pre_carry + addition_carry;
-        //        //check for overflow
-        //        bool overflow = x.m_limbs[x_index] > original_word;
-        //        if (divide_debug) {
-        //            x.to_cstr(s);
-        //            printf("After 3.3 %s\n", s);
-        //            quotient.to_cstr(s);
-        //            printf("q = %s\n", s);
-        //        }
-        //        //3.4 check if the previous subtraction of qy overflowed.  if so add back one y
-        //        if (overflow)
-        //        {
-        //            if (divide_debug) printf("3.4 correction\n");
-        //            addition_carry = 0;
-        //            for (auto k = 0; k <= t; k++)
-        //            {
-        //                int x_index = j + k;
-        //                uint32_t xx = x.m_limbs[x_index];
-        //                uint32_t yk = y.m_limbs[k];
-        //                uint32_t x_pre_carry = xx + yk;
-        //                propagate = x_pre_carry == 0xFFFFFFFF;
-        //                generate = x_pre_carry < xx;
-        //                x.m_limbs[x_index] = x_pre_carry + addition_carry;
-        //                addition_carry = generate || (propagate && addition_carry) ? 1 : 0;
-        //            }
-        //            //handle carries to the final word
-        //            int x_index = j + t + 1;
-        //            x.m_limbs[x_index] += addition_carry;
-
-        //            //decrement the quotient word
-        //            quotient.m_limbs[j]--;
-
-        //            if (divide_debug) {
-        //                x.to_cstr(s);
-        //                printf("After 3.4 correction %s\n", s);
-        //                quotient.to_cstr(s);
-        //                printf("q = %s\n", s);
-        //            }
-        //        }
-        //    }
-        //    remainder = x >> normalize_shift;  //denormalize the remainder
-        //    if (divide_debug) {
-        //        remainder.to_cstr(s);
-        //        printf("remainder = %s\n", s);
-        //    }
-        //    return;
-        //}
-
-        ////Same as multiprecision divide but return just the remainder, which uses fewer resources. Reference HAC chapter 14 algorithm 14.20.
-        //template<int BITS>
-        // void Ump<BITS>::remainder(const Ump<BITS>& divisor, Ump<BITS>& remainder) const
-        //{
-        //    const bool divide_debug = false;  //enable printfs
-        //    if (divisor == 0)
-        //    {
-        //        if (divide_debug) printf("gpu division by zero detected.\n");
-        //        remainder = 0;
-        //        return;
-        //    }
-        //    if (divisor == 1)
-        //    {
-        //        remainder = 0;
-        //        return;
-        //    }
-
-        //    int cmp = compare(divisor);
-        //    if (cmp == 0)
-        //    {
-        //        //the dividend and divisor are equal
-        //        remainder = 0;
-        //        return;
-        //    }
-        //    if (cmp == -1)
-        //    {
-        //        //the divisor is larger than the dividend
-        //        remainder = *this;
-        //        return;
-        //    }
-
-        //    uint32_t quotient_word = 0;
-        //    Ump<BITS> y = divisor;
-        //    Ump<BITS> x = *this;
-
-        //    //t is the highest non-0 word of the divisor
-        //    int t;
-        //    for (t = divisor.LIMBS - 1; t >= 0; t--)
-        //    {
-        //        if (divisor.m_limbs[t] > 0)
-        //            break;
-        //    }
-        //    //normalize by shifting both dividend and divisor left until the MSB of the first divisor word is 1.
-        //    //this can overflow the dividend so we have to use the extra word.
-        //    int normalize_shift = __clz(divisor.m_limbs[t]);  //clz is an nvidia primitive that counts the leading zeros of a word
-        //    y <<= normalize_shift;
-        //    x <<= normalize_shift;
-
-        //    //n is the highest non-0 word of the dividend
-        //    int n;
-        //    for (n = x.LIMBS - 1; n >= 0; n--)
-        //    {
-        //        if (x.m_limbs[n] > 0)
-        //            break;
-        //    }
-
-        //    if (divide_debug) printf("n %i t %i normalize_shift %i \n", n, t, normalize_shift);
-        //    //after normalization, this loop should execute max once
-        //    Ump<BITS>* temp = new Ump<BITS>;
-        //    *temp = y << (32 * (n - t));
-        //    while (x >= *temp)
-        //    {
-        //        x -= *temp;
-        //    }
-        //    delete temp;
-
-        //    char s[LIMBS * 10];
-        //    if (divide_debug) {
-        //        printf("step 2\n");
-        //        x.to_cstr(s);
-        //        printf("x = %s\n", s);
-        //        y.to_cstr(s);
-        //        printf("y = %s\n", s);
-        //        
-        //    }
-
-        //    //step 3
-        //    for (auto i = n; i > t; i--)  //t can be 0.  i is >= 1;
-        //    {
-
-        //        int j = i - t - 1;  //the index of the current quotient word.  j >= 0;
-        //        uint32_t xi = x.m_limbs[i];
-        //        if (divide_debug) printf("3.1 i %i j %i\n", i, j);
-        //        //3.1
-        //        if (xi == y.m_limbs[t])
-        //        {
-        //            quotient_word = 0xFFFFFFFF;
-        //            if (divide_debug) printf("3.1a\n");
-        //        }
-        //        else
-        //        {
-        //            //perform double precision division using the upper words
-        //            quotient_word = ((static_cast<uint64_t>(xi) << 32) + x.m_limbs[i - 1]) / y.m_limbs[t];
-        //            if (divide_debug) printf("3.1b q = %08x\n", quotient_word);
-
-        //        }
-        //        //3.2
-        //        //determine if the estimate for qy is greater than x.  this gives a triple precision result so we use two 64 bit words for qy
-        //        uint64_t y_upper = (static_cast<uint64_t>(y.m_limbs[t]) << 32) | static_cast<uint64_t>(t > 0 ? y.m_limbs[t - 1] : 0);
-        //        uint64_t qy_low = y_upper * quotient_word;
-        //        //this is triple precision so we only need the lower 32 bits from the upper 64 bit multiplication result
-        //        uint32_t qy_upper = __umul64hi(y_upper, quotient_word);  //todo: deal with non-portable cuda intrinsic for high word multiply.  
-        //        if (divide_debug) printf("y_t = %08x y_upper = %016llx qy_low = %016llx qy_upper = %08x xi = %08x\n",
-        //            y.m_limbs[t], y_upper, qy_low, qy_upper, xi);
-        //        //while the estimate for qy is greater than x
-        //        while ((qy_upper > xi) || ((qy_upper == xi) && ((qy_low >> 32) > x.m_limbs[i - 1])) ||
-        //            ((qy_upper == xi) && ((qy_low >> 32) == x.m_limbs[i - 1]) && (static_cast<uint32_t>(qy_low) > i >= 2 ? x.m_limbs[i - 2] : 0)))
-        //        {
-        //            quotient_word--;
-        //            //update the estimate
-        //            qy_low = y_upper * quotient_word;
-        //            qy_upper = __umul64hi(y_upper, quotient_word);
-        //            if (divide_debug) printf("Inisde 3.2 correction loop.  qy_upper = %08x q_j = %08x\n", qy_upper, quotient_word);
-        //        }
-        //        //3.3 subtract q*y from x, where q is the current single precision quotient word we are working on and y is the full precision y. 
-
-        //        uint32_t multiplication_carry = 0;  //carry for the multiply
-        //        uint32_t addition_carry = 1; //borrow for the subtraction
-        //        bool propagate = false;  //addition carry propagate
-        //        bool generate = false; //addition carry generate
-        //        //multiply and subtract in one loop to minimize need for intermediate storage
-        //        for (auto k = 0; k <= t; k++)
-        //        {
-        //            uint32_t yk = y.m_limbs[k];
-        //            uint64_t q = quotient_word;  //cast to 64 bits 
-        //            uint64_t qy64 = q * yk + multiplication_carry;  //perform multiplication of one word
-        //            uint32_t qy = static_cast<uint32_t>(qy64);  //keep the lower part of the multiplication
-        //            multiplication_carry = qy64 >> 32;  //carry the upper part of the multiplication result
-        //            //subtract qy from x by adding the two's complement
-        //            int x_index = j + k;
-        //            uint32_t xx = x.m_limbs[x_index];
-        //            uint32_t x_pre_carry = xx + ~qy;
-        //            propagate = x_pre_carry == 0xFFFFFFFF;
-        //            generate = x_pre_carry < xx;
-        //            x.m_limbs[x_index] = x_pre_carry + addition_carry;
-        //            addition_carry = generate || (propagate && addition_carry) ? 1 : 0;
-        //            if (divide_debug) printf("3.3 k %i j %i q_j %08x y_k %08x qy %08x mult_carry %08x xx %08x x_pre %08x add_carry %i\n",
-        //                k, j, quotient_word, yk, qy, multiplication_carry, xx, x_pre_carry, addition_carry);
-        //        }
-
-        //        //handle carries to the final word
-        //        int x_index = j + t + 1;
-        //        uint32_t original_word = x.m_limbs[x_index];
-        //        uint32_t x_pre_carry = x.m_limbs[x_index] + ~multiplication_carry;
-        //        x.m_limbs[x_index] = x_pre_carry + addition_carry;
-        //        //check for overflow
-        //        bool overflow = x.m_limbs[x_index] > original_word;
-        //        if (divide_debug) {
-        //            x.to_cstr(s);
-        //            printf("After 3.3 %s\n", s);
-
-        //        }
-        //        //3.4 check if the previous subtraction of qy overflowed.  if so add back one y
-        //        if (overflow)
-        //        {
-        //            if (divide_debug) printf("3.4 correction\n");
-        //            addition_carry = 0;
-        //            for (auto k = 0; k <= t; k++)
-        //            {
-        //                int x_index = j + k;
-        //                uint32_t xx = x.m_limbs[x_index];
-        //                uint32_t yk = y.m_limbs[k];
-        //                uint32_t x_pre_carry = xx + yk;
-        //                propagate = x_pre_carry == 0xFFFFFFFF;
-        //                generate = x_pre_carry < xx;
-        //                x.m_limbs[x_index] = x_pre_carry + addition_carry;
-        //                addition_carry = generate || (propagate && addition_carry) ? 1 : 0;
-        //            }
-        //            //handle carries to the final word
-        //            int x_index = j + t + 1;
-        //            x.m_limbs[x_index] += addition_carry;
-
-        //            //decrement the quotient word
-        //            quotient_word--;
-
-        //            if (divide_debug) {
-        //                x.to_cstr(s);
-        //                printf("After 3.4 correction %s\n", s);
-        //                
-        //            }
-        //        }
-        //    }
-        //    remainder = x >> normalize_shift;  //denormalize the remainder
-        //    if (divide_debug) {
-        //        remainder.to_cstr(s);
-        //        printf("remainder = %s\n", s);
-        //    }
-        //    return;
-        //}
+                }
+            }
+            remainder = x >> normalize_shift;  //denormalize the remainder
+            
+            return;
+        }
 
         //Calculate R mod m where m is the modulus (this), R is 2^BITS 
         //The upper word (but not the extra word) of m must be non-zero.  the object is m. 

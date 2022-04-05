@@ -25,6 +25,8 @@ namespace ump {
 		bool multiply_test_ui();
 		bool multiply_test();
 		bool multiply_full_test();
+		bool divide_128_test();
+		bool divide_test();
 		bool mod_inv_test();
 		bool montgomery_square_test();
 		bool double_and_reduce_test();

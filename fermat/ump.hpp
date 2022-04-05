@@ -71,7 +71,7 @@ namespace ump {
 			void assign(std::string);
 			void random();
 			Ump modinv(const Ump&) const;
-			//void divide(const Ump& divisor, Ump& quotient, Ump& remainder) const;
+			void divide(const Ump& divisor, Ump& quotient, Ump& remainder) const;	
 			Ump R_mod_m() const;
 			//void remainder(const Ump& divisor, Ump& remainder) const;
 			int compare(const Ump&) const;
@@ -81,7 +81,7 @@ namespace ump {
 			bool is_prime();
 
 		};
-
+		//template<> void Ump<128>::divide(const Ump& divisor, Ump& quotient, Ump& remainder) const;
 		
 		template<int BITS>   Ump<BITS> operator + (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
 		template<int BITS>   Ump<BITS> operator + (const Ump<BITS>& lhs, int rhs);

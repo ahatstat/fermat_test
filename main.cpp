@@ -173,10 +173,17 @@ int main()
 		count++;
 	}
 	std::cout << "found a " << bits << " bit prime after " << count << " guesses." << std::endl;
+	
 
+	/*n = 9;
+	prime = n.is_prime();
+	std::string notstring = "probably ";
+	if (!prime) notstring = "not ";
+	std::cout << n.to_str() << " is " << notstring << "prime." << std::endl;*/
 
 	ump::Ump_test test;
 	bool pass = true;
+	
 	if (!test.conversion_test())
 	{
 		std::cout << "Conversion test failed." << std::endl;
@@ -210,6 +217,16 @@ int main()
 	if (!test.multiply_full_test())
 	{
 		std::cout << "Multiply full test failed." << std::endl;
+		pass = false;
+	}
+	if (!test.divide_128_test())
+	{
+		std::cout << "Divide 128 test failed." << std::endl;
+		pass = false;
+	}
+	if (!test.divide_test())
+	{
+		std::cout << "Divide test failed." << std::endl;
 		pass = false;
 	}
 	if (!test.mod_inv_test())
