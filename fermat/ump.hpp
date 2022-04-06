@@ -98,10 +98,8 @@ namespace ump {
 		template<int BITS>   Ump<BITS> operator - (const Ump<BITS>& lhs, uint32_t rhs);
 		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, limb_t);
 		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
-		template<int BITS>  Ump<BITS> operator / (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
-		template<int BITS>  Ump<BITS> operator / (const Ump<BITS>& lhs, limb_t);
-		template<int BITS>  Ump<BITS> operator % (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
-		template<int BITS>  Ump<BITS> operator % (const Ump<BITS>& lhs, limb_t);
+		template<int BITS, typename T>  Ump<BITS> operator / (const Ump<BITS>& lhs, const T& rhs);
+		template<int BITS, typename T>  Ump<BITS> operator % (const Ump<BITS>& lhs, const T& rhs);
 		template<int BITS>   bool operator > (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
 		template<int BITS>   bool operator > (const Ump<BITS>& lhs, int rhs);
 		template<int BITS>   bool operator < (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
