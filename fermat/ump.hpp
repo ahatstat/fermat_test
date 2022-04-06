@@ -81,6 +81,10 @@ namespace ump {
 			void clear_extra_words();
 			void make_odd();
 			bool is_prime();
+			operator int();
+			operator uint16_t();
+			operator uint32_t();
+			operator uint64_t();
 
 		};
 		using uint128_t = Ump<128>;
@@ -96,7 +100,11 @@ namespace ump {
 		template<int BITS>   Ump<BITS> operator - (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
 		template<int BITS>   Ump<BITS> operator - (const Ump<BITS>& lhs, int rhs);
 		template<int BITS>   Ump<BITS> operator - (const Ump<BITS>& lhs, uint32_t rhs);
-		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, limb_t);
+		template<int BITS>   Ump<BITS> operator - (int lhs, const Ump<BITS>& rhs);
+		template<int BITS>   Ump<BITS> operator - (uint32_t lhs, const Ump<BITS>& rhs);
+		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, int);
+		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, uint32_t);
+		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, uint64_t);
 		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
 		template<int BITS, typename T>  Ump<BITS> operator / (const Ump<BITS>& lhs, const T& rhs);
 		template<int BITS, typename T>  Ump<BITS> operator % (const Ump<BITS>& lhs, const T& rhs);

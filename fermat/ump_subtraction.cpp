@@ -194,6 +194,20 @@ namespace ump {
     }
 
     template<int BITS>
+    Ump<BITS> operator-(int lhs, const Ump<BITS>& rhs)
+    {
+        Ump<BITS> l{ lhs };
+        return l.sub(rhs);
+    }
+
+    template<int BITS>
+    Ump<BITS> operator-(uint32_t lhs, const Ump<BITS>& rhs)
+    {
+        Ump<BITS> l{ lhs };
+        return l.sub(rhs);
+    }
+
+    template<int BITS>
     Ump<BITS> operator-(const Ump<BITS>& lhs, uint64_t rhs)
     {
         Ump<BITS> r = rhs;

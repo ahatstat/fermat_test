@@ -13,11 +13,7 @@ namespace ump {
         pass = pass && (a1 == b1);
         bb1 = bb1 - 1;
         a1 = a1 - 1;
-        //clear a extra words
-        for (int j = Ump<1024>::HIGH_WORD + 1; j < Ump<1024>::LIMBS; j++)
-        {
-            a1.m_limbs[j] = 0;
-        }
+        a1.clear_extra_words();
         b1 = boost_uint1024_t_to_ump(bb1);
         aa1 = ump_to_boost_uint1024_t(a1);
         pass = pass && (aa1 == bb1);
@@ -64,6 +60,13 @@ namespace ump {
         b1 = boost_uint1024_t_to_ump(aa1);
         pass = pass && (a1 == b1);
         if (a1 != b1) std::cout << a1.to_str() << std::endl << b1.to_str() << std::endl;
+        a1.assign(s5);
+        uint32_t low_word = static_cast<uint32_t>(a1.m_limbs[0]);
+        uint32_t casted = static_cast<uint32_t>(a1);
+        pass = pass && (low_word == casted);
+        a1.assign(s2);
+        int casted_int = static_cast<int>(a1);
+        pass = pass && (casted_int == -1);
 
         return pass;
     }

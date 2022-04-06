@@ -62,7 +62,7 @@ namespace ump {
             remainder = *this;
             return;
         }
-        uint64_t k, n;
+        uint64_t k;
         if (divisor.m_limbs[1] == 0) //the divisor (and thus the remainder) fits in one word.
         {
             if (m_limbs[1] < divisor.m_limbs[0])  // the quotient will fit in one word
@@ -79,7 +79,7 @@ namespace ump {
             }
         }
         //the divisor is larger than one word.  The quotient will fit into one word and the remainder requires up to 2 words.
-        n = count_leading_zeros(divisor.m_limbs[1]);  // 0 <= n <= 63
+        int n = count_leading_zeros(divisor.m_limbs[1]);  // 0 <= n <= 63
         //normalize the divisor so its MSB is one
         Ump<128> v = divisor;
         v = v << n;

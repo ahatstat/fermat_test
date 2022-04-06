@@ -218,9 +218,25 @@ namespace ump {
 
 
     template<int BITS>
-    Ump<BITS> operator * (const Ump<BITS>& lhs, limb_t rhs)
+    Ump<BITS> operator * (const Ump<BITS>& lhs, int rhs)
     {
-        return lhs.multiply(rhs);
+        return lhs.multiply(static_cast<limb_t>(rhs));
+    }
+
+    template<int BITS>
+    Ump<BITS> operator * (const Ump<BITS>& lhs, uint32_t rhs)
+    {
+        return lhs.multiply(static_cast<limb_t>(rhs));
+    }
+
+    template<int BITS>
+    Ump<BITS> operator * (const Ump<BITS>& lhs, uint64_t rhs)
+    {
+        if (BITS_PER_WORD == 64)
+            return lhs.multiply(static_cast<limb_t>(rhs));
+        Ump<64> r{ rhs };
+        return lhs.multiply(r);
+
     }
 
     template<int BITS>

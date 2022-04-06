@@ -362,6 +362,34 @@ namespace ump {
         return powm_2(*this, 0);
     }
 
+    template<int BITS>
+    Ump<BITS>::operator int()
+    {
+        return static_cast<int>(m_limbs[0]);
+    }
+
+    template<int BITS>
+    Ump<BITS>::operator uint16_t()
+    {
+        return static_cast<uint16_t>(m_limbs[0]);
+    }
+
+    template<int BITS>
+    Ump<BITS>::operator uint32_t()
+    {
+        return static_cast<uint32_t>(m_limbs[0]);
+    }
+
+    template<int BITS>
+    Ump<BITS>::operator uint64_t()
+    {
+        uint64_t r = static_cast<uint64_t>(m_limbs[0]);
+        if (BITS_PER_WORD == 32)
+            r = r | (static_cast<uint64_t>(m_limbs[0]) << 32);
+        return r;
+
+    }
+
     template<int BITS, typename T>
     Ump<BITS> operator/(const Ump<BITS>& lhs, const T& rhs)
     {
