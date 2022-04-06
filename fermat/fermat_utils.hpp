@@ -3,9 +3,6 @@
 //math functions used with fermat testing
 
 #include <stdint.h>
-#if __cplusplus >= 202002L || _HAS_CXX20
-#include <bit>
-#endif
 
 namespace ump {
 
@@ -26,9 +23,6 @@ namespace ump {
 
 	template< class T > int count_leading_zeros(T x)
 	{
-#if __cplusplus >= 202002L || _HAS_CXX20
-		return std::countl_zero(x);
-#else
 		int bits = sizeof(T) * 8;
 		//hackers delight 5-13 modified for variable word size
 		T y;
@@ -46,22 +40,14 @@ namespace ump {
 			c = c >> 1;
 		} while (c != 0);
 		return n - x;
-#endif
-
 	}
 
 	template<class T> int count_trailing_zeros(T x)
 	{
-#if __cplusplus >= 202002L || _HAS_CXX20
-		return std::countr_zero(x);
-#else
 		int bits = sizeof(T) * 8;
 		//hackers delight 5-4.  convert trailing zeros to a leading zeros problem
 		return bits - count_leading_zeros(~x & (x - 1));
-#endif
 
 	}
-		
 }
-
 #endif

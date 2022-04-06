@@ -182,6 +182,28 @@ namespace ump {
         return result;
     }
 
+    template<int BITS>
+    Ump<BITS> Ump<BITS>::operator&(const Ump<BITS>& b) const
+    {
+        Ump<BITS> result;
+        for (auto i = 0; i < LIMBS; i++)
+        {
+            result.m_limbs[i] = m_limbs[i] & b.m_limbs[i];
+        }
+        return result;
+    }
+
+    template<int BITS>
+    Ump<BITS> Ump<BITS>::operator|(const Ump<BITS>& b) const
+    {
+        Ump<BITS> result;
+        for (auto i = 0; i < LIMBS; i++)
+        {
+            result.m_limbs[i] = m_limbs[i] | b.m_limbs[i];
+        }
+        return result;
+    }
+
     //return the modular inverse if it exists using the binary extended gcd algorithm 
     //Reference HAC chapter 14 algorithm 14.61
     //The modulus m must be odd
@@ -546,6 +568,32 @@ namespace ump {
             }
         }
 
+    }
+
+    template<int BITS> int count_leading_zeros(Ump<BITS> x)
+    {
+        int i = Ump<BITS>::HIGH_WORD;
+        int leading_zeros = 0;
+        while (x.m_limbs[i] == 0 && i > 0)
+        {
+            leading_zeros += BITS_PER_WORD;
+            i--;
+        }
+        leading_zeros += count_leading_zeros(x.m_limbs[i]);
+        return leading_zeros;
+    }
+
+    template<int BITS> int count_trailing_zeros(Ump<BITS> x)
+    {
+        int i = 0;
+        int trailing_zeros = 0;
+        while (x.m_limbs[i] == 0 && i < Ump<BITS>::HIGH_WORD)
+        {
+            trailing_zeros += BITS_PER_WORD;
+            i++;
+        }
+        trailing_zeros += count_trailing_zeros(x.m_limbs[i]);
+        return trailing_zeros;
     }
 
 }

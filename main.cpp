@@ -193,6 +193,11 @@ int main()
 		std::cout << "Conversion test failed." << std::endl;
 		pass = false;
 	}
+	if (!test.ctz_test())
+	{
+		std::cout << "Count trailing zeros test failed." << std::endl;
+		pass = false;
+	}
 	if (!test.add_test())
 	{
 		std::cout << "Add test failed." << std::endl;

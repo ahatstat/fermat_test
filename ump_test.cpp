@@ -71,6 +71,51 @@ namespace ump {
         return pass;
     }
 
+    bool Ump_test::ctz_test()
+    {
+        static constexpr int sample_size = 100000;
+        bool pass = true;
+
+        generate_test_vectors_a(sample_size);
+        generate_test_vectors_b(sample_size);
+
+        c.resize(sample_size);
+        cc.resize(sample_size);
+        auto start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            a[i] = a[i] >> (i % 1023);
+            c[i] = count_trailing_zeros(a[i]);
+        }
+        auto end = std::chrono::steady_clock::now();
+        auto ump_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            aa[i] = aa[i] >> (i % 1023);
+            if (aa[i] == 0)
+                cc[i] = 1024;
+            else
+                cc[i] = boost::multiprecision::lsb(aa[i]);
+        }
+        end = std::chrono::steady_clock::now();
+        auto boost_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(c[i]);
+            if (dd != cc[i])
+            {
+                std::cout << "CTZ Test failed." << std::endl << "Got " << dd << std::endl << "Expected " << cc[i] << std::endl;
+                pass = false;
+            }
+        }
+        std::cout << "Count trailing zeros performance Ump " << ump_elapsed.count() * 1.0e6 / sample_size << "[us] Boost " <<
+            boost_elapsed.count() * 1.0e6 / sample_size << "[us] " << (double)ump_elapsed.count() / boost_elapsed.count()
+            << std::endl;
+
+        return pass;
+    }
+
     bool Ump_test::add_test()
     {
         static constexpr int sample_size = 100000;

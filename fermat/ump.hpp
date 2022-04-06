@@ -65,6 +65,8 @@ namespace ump {
 			Ump operator >> (int) const;
 			void operator >>= (int);
 			Ump operator ~ () const;
+			Ump operator & (const Ump&) const;
+			Ump operator | (const Ump&) const;
 			Ump multiply(limb_t) const;
 			Ump multiply(const Ump&) const;
 			Ump multiply(Ump&, const Ump&) const;
@@ -85,6 +87,7 @@ namespace ump {
 			operator uint16_t();
 			operator uint32_t();
 			operator uint64_t();
+
 
 		};
 		using uint128_t = Ump<128>;
@@ -123,6 +126,10 @@ namespace ump {
 		template<int BITS>  Ump<BITS> montgomery_square(const Ump<BITS>& x, const Ump<BITS>& m, limb_t m_primed);
 		template<int BITS>  bool powm_2(const Ump<BITS>& m, uint64_t offset);
 		template<int BITS>  Ump<BITS> double_and_reduce(const Ump<BITS>& x, const Ump<BITS>& m, int shift);
+		template<int BITS> int count_leading_zeros(Ump<BITS> x);
+		template<int BITS> int count_trailing_zeros(Ump<BITS> x);
+
+
 }
 #include "ump.cpp"
 #endif

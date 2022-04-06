@@ -19,6 +19,7 @@ namespace ump {
 	{
 	public:
 		bool conversion_test();
+		bool ctz_test();
 		bool add_test();
 		bool add_test_ui();
 		bool subtract_test();
