@@ -49,6 +49,18 @@ namespace ump {
 #endif
 
 	}
+
+	template<class T> int count_trailing_zeros(T x)
+	{
+#if __cplusplus >= 202002L || _HAS_CXX20
+		return std::countr_zero(x);
+#else
+		int bits = sizeof(T) * 8;
+		//hackers delight 5-4.  convert trailing zeros to a leading zeros problem
+		return bits - count_leading_zeros(~x & (x - 1));
+#endif
+
+	}
 		
 }
 
