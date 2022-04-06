@@ -8,6 +8,7 @@
 #include <sstream>
 #include <algorithm>
 #include <string>
+#include "ump.hpp"
 
 namespace ump {
 
@@ -370,10 +371,26 @@ namespace ump {
     }
 
     template<int BITS>
+    Ump<BITS> operator/(const Ump<BITS>& lhs, limb_t rhs)
+    {
+        Ump<BITS> q, r, d{rhs};
+        lhs.divide(d, q, r);
+        return q;
+    }
+
+    template<int BITS>
     Ump<BITS> operator % (const Ump<BITS>& lhs, const Ump<BITS>& rhs)
     {
         Ump<BITS> q, r;
         lhs.divide(rhs, q, r);
+        return r;
+    }
+
+    template<int BITS>
+    Ump<BITS> operator%(const Ump<BITS>& lhs, limb_t rhs)
+    {
+        Ump<BITS> q, r, d{rhs};
+        lhs.divide(d, q, r);
         return r;
     }
 

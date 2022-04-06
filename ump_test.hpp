@@ -22,6 +22,7 @@ namespace ump {
 		bool add_test();
 		bool add_test_ui();
 		bool subtract_test();
+		bool negate_test();
 		bool multiply_test_ui();
 		bool multiply_test();
 		bool multiply_full_test();

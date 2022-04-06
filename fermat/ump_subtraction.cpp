@@ -5,6 +5,7 @@
 #define sub_borrow_u64 _subborrow_u64
 #elif defined(__GNUC__) && defined(__x86_64__)  //GCC X64
 #include <x86intrin.h>
+#include "ump.hpp"
 #define sub_borrow_u64 _subborrow_u64
 #elif defined(__SIZEOF_INT128__)  //The compiler supports 128 bit arithmetic
 static inline unsigned char sub_borrow_u64(unsigned char carry_in, uint64_t a, uint64_t b, uint64_t* sum)
@@ -137,6 +138,13 @@ namespace ump {
     }
 
     template<int BITS>
+    Ump<BITS> Ump<BITS>::negate()
+    {
+        Ump<BITS> zero;
+        return zero.sub(*this);
+    }
+
+    template<int BITS>
     void Ump<BITS>::operator-=(const Ump<BITS>& b)
     {
         decrement(b);
@@ -159,6 +167,12 @@ namespace ump {
     {
         Ump<BITS> r = b;
         decrement(r);
+    }
+
+    template<int BITS>
+    Ump<BITS> Ump<BITS>::operator-()
+    {
+        return negate();
     }
 
     template<int BITS>

@@ -34,6 +34,7 @@ namespace ump {
 			Ump(int);
 			Ump();
 			Ump(std::string);
+			Ump negate();
 			Ump add(const Ump&) const;
 			Ump add(int) const;
 			Ump add(uint32_t) const;
@@ -58,6 +59,7 @@ namespace ump {
 			void operator -= (int);
 			void operator -= (uint32_t);
 			void operator -= (uint64_t);
+			Ump operator - ();
 			Ump operator << (int) const;
 			void operator <<= (int);
 			Ump operator >> (int) const;
@@ -94,10 +96,12 @@ namespace ump {
 		template<int BITS>   Ump<BITS> operator - (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
 		template<int BITS>   Ump<BITS> operator - (const Ump<BITS>& lhs, int rhs);
 		template<int BITS>   Ump<BITS> operator - (const Ump<BITS>& lhs, uint32_t rhs);
-		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, typename Ump<BITS>::limb_t);
+		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, limb_t);
 		template<int BITS>   Ump<BITS> operator * (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
 		template<int BITS>  Ump<BITS> operator / (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
+		template<int BITS>  Ump<BITS> operator / (const Ump<BITS>& lhs, limb_t);
 		template<int BITS>  Ump<BITS> operator % (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
+		template<int BITS>  Ump<BITS> operator % (const Ump<BITS>& lhs, limb_t);
 		template<int BITS>   bool operator > (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
 		template<int BITS>   bool operator > (const Ump<BITS>& lhs, int rhs);
 		template<int BITS>   bool operator < (const Ump<BITS>& lhs, const Ump<BITS>& rhs);

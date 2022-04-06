@@ -191,6 +191,46 @@ namespace ump {
         return pass;
     }
 
+    bool Ump_test::negate_test()
+    {
+        static constexpr int sample_size = 100000;
+        bool pass = true;
+
+        generate_test_vectors_a(sample_size);
+        generate_test_vectors_b(sample_size);
+
+        c.resize(sample_size);
+        cc.resize(sample_size);
+        auto start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            c[i] = -b[i];
+        }
+        auto end = std::chrono::steady_clock::now();
+        auto ump_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        start = std::chrono::steady_clock::now();
+        for (auto i = 0; i < sample_size; i++)
+        {
+            cc[i] = 0-bb[i];
+        }
+        end = std::chrono::steady_clock::now();
+        auto boost_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        for (auto i = 0; i < sample_size; i++)
+        {
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(c[i]);
+            if (dd != cc[i])
+            {
+                std::cout << std::hex << "Subtract Test failed." << std::endl << "Got " << dd << std::endl << "Expected " << cc[i] << std::endl;
+                pass = false;
+            }
+        }
+        std::cout << "Negate performance Ump " << ump_elapsed.count() * 1.0e6 / sample_size << "[us] Boost " <<
+            boost_elapsed.count() * 1.0e6 / sample_size << "[us] " << (double)ump_elapsed.count() / boost_elapsed.count()
+            << std::endl;
+
+        return pass;
+    }
+
     //bignum multiplied by a single word
     bool Ump_test::multiply_test_ui()
     {

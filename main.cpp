@@ -208,6 +208,11 @@ int main()
 		std::cout << "Subtract test failed." << std::endl;
 		pass = false;
 	}
+	if (!test.negate_test())
+	{
+		std::cout << "Negate test failed." << std::endl;
+		pass = false;
+	}
 	if (!test.multiply_test_ui())
 	{
 		std::cout << "Multiply test ui failed." << std::endl;
