@@ -381,7 +381,7 @@ namespace ump {
     {
         if (m_limbs[0] % 2 == 0)
             return false;
-        return powm_2(*this, 0);
+        return fermat_test_base_2(*this, 0);
     }
 
     template<int BITS>

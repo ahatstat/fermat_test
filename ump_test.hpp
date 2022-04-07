@@ -32,6 +32,7 @@ namespace ump {
 		bool mod_inv_test();
 		bool montgomery_square_test();
 		bool double_and_reduce_test();
+		bool powm_2_test();
 		void generate_test_vectors_a(int vector_size);
 		void generate_test_vectors_b(int vector_size);
 

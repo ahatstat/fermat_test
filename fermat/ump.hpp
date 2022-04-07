@@ -124,7 +124,9 @@ namespace ump {
 		template<int BITS>   bool operator != (const Ump<BITS>& lhs, const Ump<BITS>& rhs);
 		template<int BITS>   bool operator != (const Ump<BITS>& lhs, int rhs);
 		template<int BITS>  Ump<BITS> montgomery_square(const Ump<BITS>& x, const Ump<BITS>& m, limb_t m_primed);
-		template<int BITS>  bool powm_2(const Ump<BITS>& m, uint64_t offset);
+		template<int BITS>  bool fermat_test_base_2(const Ump<BITS>& m, uint64_t offset);
+		template<int BITS>  Ump<BITS> powm_2(const Ump<BITS>& m, uint64_t offset);
+		template<int BITS>	void montgomery_reduce(Ump<BITS>& A, const Ump<BITS>& m, limb_t m_primed);
 		template<int BITS>  Ump<BITS> double_and_reduce(const Ump<BITS>& x, const Ump<BITS>& m, int shift);
 		template<int BITS> int count_leading_zeros(Ump<BITS> x);
 		template<int BITS> int count_trailing_zeros(Ump<BITS> x);

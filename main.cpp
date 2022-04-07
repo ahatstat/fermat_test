@@ -258,6 +258,11 @@ int main()
 		std::cout << "Double and reduce test failed." << std::endl;
 		pass = false;
 	}
+	if (!test.powm_2_test())
+	{
+		std::cout << "powm_2 test failed." << std::endl;
+		pass = false;
+	}
 	if (!fermat_performance_test())
 	{
 		std::cout << "Fermat test failed." << std::endl;

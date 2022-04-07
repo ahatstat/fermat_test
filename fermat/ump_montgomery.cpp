@@ -1,3 +1,4 @@
+#include "ump.hpp"
 
 namespace ump {
 
@@ -71,7 +72,7 @@ namespace ump {
         //returns true if 2^(m-1) mod m == 1, false otherwise
         //m_primed and rmodm are precalculated values.  See hac 14.94.  
         //R^2 mod m is not needed because with base 2 is trivial to calculate 2*R mod m given R mod m
-        template<int BITS>  bool powm_2(const Ump<BITS>& base_m, uint64_t offset)
+        template<int BITS>  bool fermat_test_base_2(const Ump<BITS>& base_m, uint64_t offset)
         {
             const Ump<BITS>& m = base_m + offset;
             
@@ -118,6 +119,66 @@ namespace ump {
             //A = montgomery_reduce(A, m, m_primed);
             return pass;
 
+        }
+
+        //returns 2^(m-1) mod m
+        //m_primed and rmodm are precalculated values.  See hac 14.94.  
+        //R^2 mod m is not needed because with base 2 is trivial to calculate 2*R mod m given R mod m
+        template<int BITS>
+        Ump<BITS> powm_2(const Ump<BITS>& base_m, uint64_t offset)
+        {
+            const Ump<BITS>& m = base_m + offset;
+
+            //precalculation of some constants based on the modulus
+            const limb_t m_primed = -mod_inverse_64(m.m_limbs[0]);
+
+            //initialize the product to R mod m, the equivalent of 1 in the montgomery domain
+            Ump<BITS> A = m.R_mod_m();
+
+            //perform the first few iterations without montgomery multiplication - we are multiplying by small powers of 2
+            int word = Ump<BITS>::HIGH_WORD;
+            const int top_bits_window = 4;
+            int shift = BITS_PER_WORD - top_bits_window;
+            limb_t mask = static_cast<limb_t>((1 << top_bits_window) - 1) << shift;
+            int top_bits = (m.m_limbs[word] & mask) >> shift;
+            A = double_and_reduce(A, m, top_bits);
+            //Go through each bit of the exponent.  We assume all words except the lower three match the base big int
+            for (int i = BITS - top_bits_window - 1; i >= 1; i--)
+            {
+                //square
+                montgomery_square(A, m, m_primed);
+                word = i / BITS_PER_WORD;
+                int bit = i % BITS_PER_WORD;
+                mask = 1ull << bit;
+                bool bit_is_set = (m.m_limbs[word] & mask) != 0;
+                if (bit_is_set)
+                {
+                    //multiply by the base (2) if the exponent bit is set
+                    A = double_and_reduce(A, m, 1);
+                }
+
+            }
+            //the final iteration happens here. the exponent m-1 lowest bit is always 0 so we never need to double and reduce after squaring
+            montgomery_square(A, m, m_primed);
+            //convert back from montgomery domain
+            montgomery_reduce(A, m, m_primed);
+            return A;
+        }
+
+        //reduce x to xR^-1 mod m
+        //HAC 14.32
+        template<int BITS> void montgomery_reduce(Ump<BITS>& A, const Ump<BITS>& m, limb_t m_primed)
+        {
+            for (int i = 0; i <= Ump<BITS>::HIGH_WORD; i++)
+            {
+                limb_t u = A.m_limbs[0] * m_primed;
+                A += m * u;
+                A >>= BITS_PER_WORD;
+            }
+            if (A >= m)
+            {
+                A -= m;
+            }
         }
         
         // return 2 * x mod m given x and m using shift and subtract.

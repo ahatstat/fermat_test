@@ -668,6 +668,37 @@ namespace ump {
         return pass;
     }
 
+    bool Ump_test::powm_2_test()
+    {
+        static constexpr int sample_size = 100;
+        bool pass = true;
+
+        generate_test_vectors_a(sample_size);
+        generate_test_vectors_b(sample_size);
+
+        c.resize(sample_size);
+        cc.resize(sample_size);
+        for (auto i = 0; i < sample_size; i++)
+        {
+            //a[i] is the offset
+            a[i].make_odd();
+            a[i] += 1;  //a is even
+            //b[i] is base big int
+            b[i].make_odd();
+            bb[i] = (bb[i] | 1) + a[i].m_limbs[0];
+            c[i] = powm_2(b[i], a[i].m_limbs[0]); 
+            boost::multiprecision::uint1024_t two = 2;
+            cc[i] = boost::multiprecision::powm(two, bb[i] - 1, bb[i]);
+            boost::multiprecision::uint1024_t dd = ump_to_boost_uint1024_t(c[i]);
+            if (dd != cc[i])
+            {
+                pass = false;
+            }
+        }
+
+        return pass;
+    }
+
     void Ump_test::generate_test_vectors_a(int test_vector_size)
     {
         a = {};

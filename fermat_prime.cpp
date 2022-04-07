@@ -8,7 +8,7 @@
 #pragma omp parallel for
         for (int i=0; i< (int)m_offsets.size(); i++)
         {
-            bool is_prime = ump::powm_2(m_base_int, m_offsets[i]);
+            bool is_prime = ump::fermat_test_base_2(m_base_int, m_offsets[i]);
             results[i] = is_prime;
         }
         return results;
