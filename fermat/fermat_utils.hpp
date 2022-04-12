@@ -46,7 +46,8 @@ namespace ump {
 	{
 		int bits = sizeof(T) * 8;
 		//hackers delight 5-4.  convert trailing zeros to a leading zeros problem
-		return bits - count_leading_zeros(~x & (x - 1));
+		T y = ~x & (x - 1);
+		return bits - count_leading_zeros(y);
 
 	}
 }

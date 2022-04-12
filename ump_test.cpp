@@ -76,6 +76,12 @@ namespace ump {
         static constexpr int sample_size = 100000;
         bool pass = true;
 
+        uint8_t b = 64 + 4;
+        int msb = boost::multiprecision::msb(b);
+        int clz = count_leading_zeros(b);
+        pass &= clz == (sizeof(b) * 8 - 1 - msb);
+        pass &= count_trailing_zeros(b) == boost::multiprecision::lsb(b);
+
         generate_test_vectors_a(sample_size);
         generate_test_vectors_b(sample_size);
 
