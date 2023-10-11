@@ -77,10 +77,9 @@ namespace ump {
         bool pass = true;
 
         uint8_t b = 64 + 4;
-        int msb = boost::multiprecision::msb(b);
         int clz = count_leading_zeros(b);
-        pass &= clz == (sizeof(b) * 8 - 1 - msb);
-        pass &= count_trailing_zeros(b) == boost::multiprecision::lsb(b);
+        pass = pass && clz == 1;
+        pass = pass && count_trailing_zeros(b) == 2;
 
         generate_test_vectors_a(sample_size);
         generate_test_vectors_b(sample_size);
