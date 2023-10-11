@@ -213,7 +213,7 @@ namespace ump {
         //the modulus m must be odd and greater than 1 and the number to invert must be non zero plus other restrictions
         if (m.m_limbs[0] % 2 == 0 || m < 1 || *this == 0 )
             return 0;
-        const bool debug = false;
+        
         //const Ump<BITS> y = *this;
         const Ump<BITS> x = m;  //x == m is odd and > 0
         Ump<BITS> u = m;  //u, x >= 0
@@ -222,15 +222,7 @@ namespace ump {
         //step 3
         Ump<BITS> B = 0, D = 1;  //B and D can be negative, we must deal with the signs    
         int i = 0;
-        if (debug)
-        {
-            char us[400], vs[400], Bs[400], Ds[400];
-            u.to_cstr(us);
-            v.to_cstr(vs);
-            B.to_cstr(Bs);
-            D.to_cstr(Ds);
-            printf("iteration %i\nu=%s\nv=%s\nB=%s\nD=%s\n", i, us, vs, Bs, Ds);
-        }
+       
         //max iterations is 2 * (2 * 1024 + 2) = 4100
         while (u != 0 && !u.m_limbs[LIMBS - 1])  //if u goes negative, stop.  something is wrong
         {
@@ -246,15 +238,6 @@ namespace ump {
                 B = B >> 1;  //divide by 2
                 //copy the top bit to preserve the sign
                 B.m_limbs[LIMBS - 1] = B.m_limbs[LIMBS - 1] | ((B.m_limbs[LIMBS - 1] & (1u << 30)) << 1);
-                if (debug)
-                {
-                    char us[400], vs[400], Bs[400], Ds[400];
-                    u.to_cstr(us);
-                    v.to_cstr(vs);
-                    B.to_cstr(Bs);
-                    D.to_cstr(Ds);
-                    printf("4. u was even.  iteration %i\nu=%s\nv=%s\nB=%s\nD=%s\n", i, us, vs, Bs, Ds);
-                }
                 ++i;
             }
             //step 5
@@ -268,15 +251,6 @@ namespace ump {
                 D = D >> 1;  //divide by 2
                 //copy the top bit to preserve the sign
                 D.m_limbs[LIMBS - 1] = D.m_limbs[LIMBS - 1] | ((D.m_limbs[LIMBS - 1] & (1u << 30)) << 1);
-                if (debug)
-                {
-                    char us[400], vs[400], Bs[400], Ds[400];
-                    u.to_cstr(us);
-                    v.to_cstr(vs);
-                    B.to_cstr(Bs);
-                    D.to_cstr(Ds);
-                    printf("5. v was even.  iteration %i\nu=%s\nv=%s\nB=%s\nD=%s\n", i, us, vs, Bs, Ds);
-                }
                 ++i;
             }
             //step 6
@@ -290,16 +264,6 @@ namespace ump {
                 v -= u;
                 D -= B;
             }
-            if (debug)
-            {
-                    
-                char us[400], vs[400], Bs[400], Ds[400];
-                u.to_cstr(us);
-                v.to_cstr(vs);
-                B.to_cstr(Bs);
-                D.to_cstr(Ds);
-                printf("6. u=%s\nv=%s\nB=%s\nD=%s\n", us, vs, Bs, Ds);
-            }
                 
         }
         //if the result is negative, add moduli
@@ -309,15 +273,6 @@ namespace ump {
         //if the result is larger than the modulus, subtract moduli
         while (D > m)
             D -= m;
-
-        if (debug)
-        {
-            char Ds[400];
-            char vs[400];
-            D.to_cstr(Ds);
-            v.to_cstr(vs);
-            printf("result=%s\nv=%s\n", Ds, vs);
-        }
 
         //the inverse modulus does not exist
         if (v != 1)

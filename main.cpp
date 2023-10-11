@@ -4,6 +4,7 @@
 #include <boost/multiprecision/gmp.hpp>
 #include <vector>
 #include <iostream>
+#include <chrono>
 #include <omp.h>
 #include <openssl/bn.h>
 #include "fermat_prime.hpp"
