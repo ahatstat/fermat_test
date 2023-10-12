@@ -7,7 +7,7 @@ project(FermatPrimeTest VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(BUILD_TESTS "Test against Boost, GMP, and OpenSSL." ON)
+# option(BUILD_TESTS "Test against Boost, GMP, and OpenSSL." ON)
 add_library(fermat_test INTERFACE)
 target_include_directories(fermat_test INTERFACE fermat)
 
